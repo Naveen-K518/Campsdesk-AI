@@ -1,0 +1,37 @@
+# Learn more https://docs.expo.dev/more/expo-cli/#ignore-rules
+
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# macOS
+.DS_Store
+
+# Android/IntelliJ
+android/build/
+android/app/build/
+android/.idea/
+android/.gradle/
+android/local.properties
+android/*.iml
+android/*.hprof
+android/.cxx/
+
+# Gradle
+.gradle
+build/
+
+# Bundle artifacts
+*.jsbundle
+
+# Environment
+.env
+.env*.local

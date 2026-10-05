@@ -1,0 +1,79 @@
+[
+  {
+    "id": "g_01",
+    "section": "Sec 4.2",
+    "category": "Attendance & Leave",
+    "title": "Medical Leave Condonation Policy",
+    "body": "Students with attendance between 65% and 74.9% due to verified hospitalization, acute illness, or authorized emergency may apply for condonation. Submission of registered medical practitioner certificates, hospital discharge summaries, and parent attestation within 5 working days of resumption is mandatory. Condonation up to 10% maximum is subject to Senate Board approval.",
+    "verificationCriteria": [
+      "Authentic Medical Certificate with Doctor Registration Number",
+      "Proof of Hospitalization / Prescription receipts stamped",
+      "Endorsement from Faculty Advisor within 5 working days of return"
+    ],
+    "lastUpdated": "Aug 2025",
+    "mostConsulted": true
+  },
+  {
+    "id": "g_02",
+    "section": "Sec 6.1",
+    "category": "Hostel & Mess",
+    "title": "Hostel Curfew & Weekend Leave Pass Guidelines",
+    "body": "Curfew for undergraduate hostels is 9:30 PM on weekdays and 10:30 PM on weekends. Overnight or weekend leave passes require digital consent via CampusDesk AI parent portal at least 12 hours prior to exit. Emergency exits after 10:00 PM require Warden on-call authentication.",
+    "verificationCriteria": [
+      "Digital Parent/Guardian SMS/App confirmation token",
+      "Hostel dues clearance verification for extended stays > 5 days",
+      "Hostel Warden digital signature via SIS queue"
+    ],
+    "lastUpdated": "Jul 2025"
+  },
+  {
+    "id": "g_03",
+    "section": "Sec 8.4",
+    "category": "Examination & Grading",
+    "title": "Mid-Term Clearance & Hall Ticket Issuance",
+    "body": "Students must maintain a minimum 75% attendance in each registered subject (or approved condonation order) and have cleared all departmental lab dues, tuition fees, and library fines by the clearance cutoff to auto-generate exam hall tickets.",
+    "verificationCriteria": [
+      "Minimum 75% attendance or active condonation docket",
+      "Finance office no-dues ledger clearance",
+      "Library return registry confirmation"
+    ],
+    "lastUpdated": "Sep 2025"
+  },
+  {
+    "id": "g_04",
+    "section": "Sec 7.1",
+    "category": "Placements & NOC",
+    "title": "Placement Drive On-Duty (OD) Attendance Credit",
+    "body": "Students participating in campus placement drives, technical hackathons, or authorized corporate interviews are granted academic On-Duty attendance credit up to a maximum of 14 working days per academic term.",
+    "verificationCriteria": [
+      "Career Development Cell (CDC) attendance punch record",
+      "Shortlist invite email from registered corporate recruiter",
+      "Faculty Mentor review and automatic attendance ledger credit"
+    ],
+    "lastUpdated": "Fall 2025"
+  },
+  {
+    "id": "g_05",
+    "section": "Sec 3.5",
+    "category": "Hostel & Mess",
+    "title": "Mess Rebate & Extended Absence Reimbursement",
+    "body": "Students absent from the hostel mess for 7 or more consecutive days on approved academic OD or medical leave are eligible for a prorated daily mess rebate of ₹140 per day credited towards next semester dues.",
+    "verificationCriteria": [
+      "Approved CampusDesk Leave Pass spanning 7+ days",
+      "Biometric exit and re-entry timestamp match at Campus Gate"
+    ],
+    "lastUpdated": "Aug 2025"
+  },
+  {
+    "id": "g_06",
+    "section": "Sec 5.2",
+    "category": "Examination & Grading",
+    "title": "Continuous Assessment Re-evaluation & Scrutiny",
+    "body": "Answer scripts for mid-term assessments and semester tests may be requested for re-scrutiny within 7 calendar days of mark declaration. An evaluation panel re-checks summation and grading against the official marking rubrics.",
+    "verificationCriteria": [
+      "Standard ₹350 evaluation scrutiny fee receipt",
+      "Specific questions / rubrics flagged in application"
+    ],
+    "lastUpdated": "Fall 2025"
+  }
+]

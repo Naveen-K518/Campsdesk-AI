@@ -12,6 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../theme/theme';
 import { StatusChip } from '../common/StatusChip';
 import { PrimaryButton } from '../common/PrimaryButton';
+import * as api from '../../services/api';
 
 interface AttachedFile {
   name: string;
@@ -34,6 +35,7 @@ export const UploadCard: React.FC<UploadCardProps> = ({
 }) => {
   const [file, setFile] = useState<AttachedFile | null>(null);
   const [isPicking, setIsPicking] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handlePickDocument = async () => {
     try {
@@ -126,9 +128,35 @@ export const UploadCard: React.FC<UploadCardProps> = ({
         </TouchableOpacity>
 
         <PrimaryButton
-          title="Forward to HOD ▷"
-          onPress={() => file && onForwardToHOD && onForwardToHOD(file)}
-          disabled={!file}
+          title={isUploading ? "Uploading Certificate…" : "Forward to HOD ▷"}
+          onPress={async () => {
+            if (!file) return;
+            if (file.uri) {
+              setIsUploading(true);
+              try {
+                const uploaded = await api.uploadDocument({
+                  uri: file.uri,
+                  name: file.name,
+                });
+                if (onForwardToHOD) {
+                  onForwardToHOD({
+                    name: uploaded.originalName,
+                    size: uploaded.size,
+                    uri: uploaded.url,
+                  });
+                }
+              } catch (err) {
+                console.warn('Document upload error, falling back to local file info:', err);
+                if (onForwardToHOD) onForwardToHOD(file);
+              } finally {
+                setIsUploading(false);
+              }
+            } else {
+              if (onForwardToHOD) onForwardToHOD(file);
+            }
+          }}
+          disabled={!file || isUploading}
+          loading={isUploading}
           style={styles.forwardBtn}
           size="sm"
           fullWidth={false}

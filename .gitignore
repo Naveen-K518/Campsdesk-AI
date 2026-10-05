@@ -35,3 +35,9 @@ build/
 # Environment
 .env
 .env*.local
+
+# Database & Uploads
+*.sqlite
+backend/data/
+backend/uploads/*
+!backend/uploads/.gitkeep

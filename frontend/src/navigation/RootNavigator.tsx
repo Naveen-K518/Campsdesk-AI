@@ -3,9 +3,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { SplashScreen } from '../screens/Splash/SplashScreen';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
+import { RegisterScreen } from '../screens/Auth/RegisterScreen';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import { QueryDetailScreen } from '../screens/Detail/QueryDetailScreen';
 import { NotificationsModal } from '../screens/Home/NotificationsModal';
+import { FacultyDashboardScreen } from '../screens/Faculty/FacultyDashboardScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -29,9 +31,19 @@ export const RootNavigator: React.FC = () => {
         options={{ animation: 'fade' }}
       />
       <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
         name="Main"
         component={BottomTabNavigator}
         options={{ animation: 'fade' }}
+      />
+      <Stack.Screen
+        name="FacultyDashboard"
+        component={FacultyDashboardScreen}
+        options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
         name="QueryDetail"

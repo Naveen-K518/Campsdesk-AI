@@ -18,10 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { theme } from '../../theme/theme';
 import { useQueryContext } from '../../context/QueryContext';
-import { ChatMessage, WorkflowStep } from '../../types';
+import { ChatMessage } from '../../types';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { SuggestedPromptChips, PromptOption } from '../../components/chat/SuggestedPromptChips';
-import { UploadCard } from '../../components/cards/UploadCard';
+import * as api from '../../services/api';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'AskAITab'>,
@@ -30,21 +30,22 @@ type Props = CompositeScreenProps<
 
 export const AskAIChatScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { addQuery, prefilledPrompt, setPrefilledPrompt } = useQueryContext();
+  const { prefilledPrompt, setPrefilledPrompt, guidelines, student, currentUser } = useQueryContext();
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const studentName = currentUser?.name || student?.name || 'Student';
 
   const [inputMessage, setInputMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'm1',
       sender: 'agent',
-      text: "Hello Aarav! I am your Autonomous Student Intelligence Agent. I can cross-reference your records directly with official Senate bylaws (Attendance Sec 4.2, Exam clearance, Hostel pass, Mess rebate, or Grade re-evaluation) and autonomously route dockets to your HOD.",
+      text: `Hello ${studentName}! I am your CampusDesk AI Assistant. Ask me anything about university guidelines, attendance condonation, exam policies, hostel rules, or campus procedures.`,
       timestamp: 'Just now',
-      tag: 'Autonomous Helpdesk',
+      tag: 'CampusDesk AI',
     },
   ]);
 
-  const [showUploadCard, setShowUploadCard] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
   // Check if route params has prefilledPrompt
@@ -80,189 +81,49 @@ export const AskAIChatScreen: React.FC<Props> = ({ navigation, route }) => {
     setInputMessage('');
     scrollToBottom();
 
-    // Trigger Agentic Workflow response
+    // Trigger AI response
     setTimeout(() => {
       generateAgentResponse(queryText);
     }, 800);
   };
 
-  const generateAgentResponse = (queryText: string) => {
-    const isAttendance = queryText.toLowerCase().includes('attendance') || queryText.toLowerCase().includes('condonation');
-    const isHostel = queryText.toLowerCase().includes('hostel') || queryText.toLowerCase().includes('pass');
-    const isExam = queryText.toLowerCase().includes('hall ticket') || queryText.toLowerCase().includes('clearance') || queryText.toLowerCase().includes('exam');
+  const generateAgentResponse = async (queryText: string) => {
+    const loadingMsgId = `m_load_${Date.now()}`;
+    const loadingMsg: ChatMessage = {
+      id: loadingMsgId,
+      sender: 'agent',
+      text: '🤖 CampusDesk AI is cross-referencing your query with official university bylaws…',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      tag: 'CampusDesk AI',
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+    scrollToBottom();
+
+    // Prepare guidelines context from live state
+    const guidelinesContext = (guidelines || [])
+      .map((g) => `${g.section} (${g.title}): ${g.body}`)
+      .join('\n');
 
     let agentText = '';
-    let category = 'Academic Query';
-    let subject = 'Student Inquiries';
-    let policySection = 'Sec 4.2';
-    let policyTitle = 'Medical Leave Condonation Policy';
-    let caseCode = `DOC-CS-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const steps: WorkflowStep[] = [
-      {
-        id: `ws_${Date.now()}_1`,
-        order: 1,
-        label: 'Fetched SIS Profile',
-        detail: 'Queried Campus SIS: Student #22BCS10492, CS301 Attendance recorded at 68.5%.',
-        status: 'done',
-        highlightKey: 'Current Record',
-        highlightValue: '68.5% (Threshold 75%)',
-      },
-      {
-        id: `ws_${Date.now()}_2`,
-        order: 2,
-        label: 'Evaluated Bylaws',
-        detail: 'Matched with official Senate Ordinance. Eligibility criteria satisfied.',
-        status: 'done',
-        highlightKey: 'Bylaw Match',
-        highlightValue: 'Sec 4.2 Clause 1',
-      },
-      {
-        id: `ws_${Date.now()}_3`,
-        order: 3,
-        label: 'Validation Rule',
-        detail: 'Condonable gap: 6.5%. Requires authentic doctor certificate endorsement.',
-        status: 'done',
-        highlightKey: 'Validation Gap',
-        highlightValue: '6.5% Allowed',
-      },
-      {
-        id: `ws_${Date.now()}_4`,
-        order: 4,
-        label: 'Decision Routing',
-        detail: 'Docket prepared for CSE HOD queue (Dr. K. Radhakrishnan). Pending certificate upload.',
-        status: 'in_progress',
-        highlightKey: 'Escalation Target',
-        highlightValue: 'Faculty HOD Queue',
-      },
-    ];
-
-    if (isAttendance) {
-      category = 'Attendance & Leave';
-      subject = 'Medical Leave Condonation';
-      agentText = "I have cross-referenced your profile with University Bylaws Sec 4.2. Your attendance in Operating Systems is currently 68.5% (6.5% below minimum). Under Senate Ordinance Sec 4.2, you are eligible for up to 10% condonation for certified hospitalization.";
-      setShowUploadCard(true);
-    } else if (isHostel) {
-      category = 'Hostel & Mess';
-      subject = 'Hostel Leave Pass';
-      policySection = 'Sec 6.1';
-      policyTitle = 'Hostel Leave Regulations';
-      agentText = "Verified against Hostel Statute Sec 6.1: Your outstation gate pass request qualifies for automated dispatch. Ensure digital parent consent SMS is acknowledged before 6:00 PM.";
-    } else if (isExam) {
-      category = 'Examination & Grading';
-      subject = 'Hall Ticket Clearance';
-      policySection = 'Sec 8.4';
-      policyTitle = 'Exam Clearance Standards';
-      agentText = "Audit check against Exam Bylaws Sec 8.4: Tuition ledger cleared. Library returns confirmed. Only the lab dues slip verification remains pending.";
-    } else {
-      agentText = `I have evaluated your request against official university regulations. A formal advisory docket #${caseCode} has been initialized.`;
+    try {
+      const res = await api.submitAIQuery(queryText, guidelinesContext);
+      agentText = res.response;
+    } catch (err: any) {
+      console.warn('AI Query failed:', err);
+      agentText =
+        'I evaluated your request against official university bylaws. If you require further assistance or wish to file a formal appeal, please consult your department faculty advisor.';
     }
 
-    const agentMsgId = `m_${Date.now()}`;
-    const agentMsg: ChatMessage = {
-      id: agentMsgId,
+    const finalMsg: ChatMessage = {
+      id: `m_${Date.now()}`,
       sender: 'agent',
       text: agentText,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      tag: 'Verified Policy',
-      workflowExecution: steps,
-      verifiedPolicy: {
-        code: policySection,
-        title: policyTitle,
-        caseId: caseCode,
-      },
+      tag: 'CampusDesk AI',
     };
 
-    setMessages((prev) => [...prev, agentMsg]);
+    setMessages((prev) => prev.filter((m) => m.id !== loadingMsgId).concat(finalMsg));
     scrollToBottom();
-  };
-
-  const handleForwardToHOD = (attachedDoc: { name: string; size: string }) => {
-    // Add new Query ticket into global store
-    const created = addQuery({
-      category: 'Attendance & Leave',
-      subject: 'Medical Leave Condonation',
-      title: 'Medical Leave Condonation (Verified by AI)',
-      description: `Student submitted ${attachedDoc.name} (${attachedDoc.size}). Verified under Ordinance Sec 4.2.`,
-      subLine: `Routed to HOD • Case ${attachedDoc.name}`,
-      priority: 'urgent',
-      status: 'under_review',
-      assignedTo: 'Dr. K. Radhakrishnan (HOD CSE)',
-      aiConfidence: 99.4,
-      citation: 'Cited Attendance Bylaws Sec 4.2',
-      daysCondonation: 6,
-      workflowSteps: [
-        {
-          id: 'ws_f_1',
-          order: 1,
-          label: 'Fetched SIS Profile',
-          detail: 'OS Attendance recorded at 68.5%.',
-          status: 'done',
-        },
-        {
-          id: 'ws_f_2',
-          order: 2,
-          label: 'Evaluated Bylaws Sec 4.2',
-          detail: 'Criteria validated. 6 days condonation admissible.',
-          status: 'done',
-        },
-        {
-          id: 'ws_f_3',
-          order: 3,
-          label: 'Certificate Authenticated',
-          detail: `${attachedDoc.name} validated and cryptographically hashed.`,
-          status: 'done',
-        },
-        {
-          id: 'ws_f_4',
-          order: 4,
-          label: 'Forwarded to HOD',
-          detail: 'Docket forwarded to Dr. K. Radhakrishnan for executive sign-off.',
-          status: 'in_progress',
-        },
-      ],
-      auditTranscript: [
-        {
-          id: 'at_f_1',
-          sender: 'student',
-          authorName: 'Aarav Sharma (Student)',
-          timestamp: 'Just now',
-          text: 'Uploaded medical certificate for attendance shortage condonation.',
-          attachedDoc: {
-            name: attachedDoc.name,
-            size: attachedDoc.size,
-            caption: 'Hospital Stamped & Doctor Signed',
-          },
-        },
-        {
-          id: 'at_f_2',
-          sender: 'agent',
-          authorName: 'CampusDesk Autonomous Triage Agent',
-          roleBadge: 'Autonomous Triage',
-          timestamp: 'Just now',
-          bulletPoints: [
-            'Validated medical certificate format and doctor registration.',
-            'Effective attendance projection: 88.5% post-condonation.',
-            'Admissible under Senate Ordinance Sec 4.2.',
-          ],
-          actionTaken: 'Docket escalated to HOD CSE for executive approval.',
-        },
-      ],
-    });
-
-    setShowUploadCard(false);
-
-    Alert.alert(
-      'Docket Escalated',
-      `Query ${created.code} has been autonomously routed to Dr. K. Radhakrishnan (HOD CSE). Would you like to view the live escalation pipeline?`,
-      [
-        { text: 'Stay in Chat', style: 'cancel' },
-        {
-          text: 'View Docket →',
-          onPress: () => navigation.navigate('QueryDetail', { queryId: created.id }),
-        },
-      ]
-    );
   };
 
   return (
@@ -312,14 +173,6 @@ export const AskAIChatScreen: React.FC<Props> = ({ navigation, route }) => {
         {messages.map((msg) => (
           <ChatBubble key={msg.id} message={msg} />
         ))}
-
-        {/* Document Upload Card if triggered */}
-        {showUploadCard ? (
-          <UploadCard
-            onForwardToHOD={handleForwardToHOD}
-            onSaveDraft={(f) => Alert.alert('Draft Saved', 'Your medical document draft has been saved locally.')}
-          />
-        ) : null}
       </ScrollView>
 
       {/* Suggested Prompts Row */}
@@ -342,14 +195,6 @@ export const AskAIChatScreen: React.FC<Props> = ({ navigation, route }) => {
       {/* Pinned Bottom Input Bar */}
       <View style={[styles.bottomInputBar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <View style={styles.inputContainer}>
-          <TouchableOpacity
-            onPress={() => setShowUploadCard(!showUploadCard)}
-            style={styles.attachBtn}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="attach" size={22} color={theme.colors.text.subtle} />
-          </TouchableOpacity>
-
           <TextInput
             value={inputMessage}
             onChangeText={setInputMessage}

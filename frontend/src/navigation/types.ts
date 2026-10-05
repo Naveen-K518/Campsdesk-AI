@@ -12,6 +12,8 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
+  Register: undefined;
+  FacultyDashboard: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   QueryDetail: { queryId: string };
   Notifications: undefined;

@@ -38,34 +38,37 @@
 ## 📁 Project Structure
 
 ```text
-campsdesk-ai/
-├── android/               # Native Android configuration & build wrapper
-├── assets/                # App icons, splash screens, and image assets
-├── src/
-│   ├── components/
-│   │   ├── cards/         # QueryCard, UploadCard
-│   │   ├── chat/          # ChatBubble, SuggestedPromptChips
-│   │   ├── common/        # AgenticStatusBar, GlobalTopBar, PrimaryButton, StatusChip, etc.
-│   │   ├── navigation/    # Custom BottomTabBar, TabButtons
-│   │   └── workflow/      # EscalationTimeline, WorkflowStepList
-│   ├── context/           # Global QueryContext & State Handlers
-│   ├── data/              # Initial Mock Data & Academic Fixtures
-│   ├── navigation/        # RootNavigator, BottomTabNavigator, Param Types
-│   ├── screens/
-│   │   ├── AskAI/         # AI Chat & Multimodal Query Interface
-│   │   ├── Auth/          # Campus SSO / Student Login
-│   │   ├── Detail/        # Detailed Query & Multi-Agent Escalation View
-│   │   ├── Guidelines/    # Academic Policy & Rulebook Explorer
-│   │   ├── History/       # Searchable Past Queries & Filtering
-│   │   ├── Home/          # Executive Dashboard & Live Agent Monitor
-│   │   ├── Profile/       # Student Information & Preferences
-│   │   └── Splash/        # Animated Cyber Splash Screen
-│   ├── theme/             # Color Palette, Typography & Component Tokens
-│   └── types/             # TypeScript Schemas & Type Definitions
-├── App.tsx                # App Entry Point & Provider Hierarchy
-├── app.json               # Expo Configuration
-├── package.json           # Dependencies & Scripts
-└── tsconfig.json          # TypeScript Compiler Options
+Campsdesk-AI/
+├── frontend/              # Mobile Client (React Native + Expo)
+│   ├── android/           # Native Android configuration
+│   ├── assets/            # App icons, splash screens, and images
+│   ├── src/
+│   │   ├── components/    # Reusable UI cards, chat bubbles, buttons
+│   │   ├── context/       # Global QueryContext & State Handlers
+│   │   ├── data/          # Academic fixtures & guidelines
+│   │   ├── navigation/    # Stack & Tab Navigators
+│   │   ├── screens/       # AskAI, Home, Guidelines, History, Profile
+│   │   ├── theme/         # Color palette & styling tokens
+│   │   └── types/         # TypeScript schemas & interfaces
+│   ├── App.tsx            # App Entry Point & Provider Hierarchy
+│   ├── app.json           # Expo Configuration
+│   ├── package.json       # Frontend dependencies & scripts
+│   └── tsconfig.json      # Frontend TypeScript configuration
+├── backend/               # Server & AI Orchestration API
+│   ├── src/
+│   │   ├── routes/        # AI & Guidelines endpoints
+│   │   ├── services/      # Gemini / Mistral AI service integrations
+│   │   └── server.ts      # Express application entry point
+│   ├── package.json       # Backend dependencies
+│   ├── tsconfig.json      # Backend TypeScript configuration
+│   └── .env.example       # API keys configuration template
+└── db/                    # Database Schemas & Seed Data
+    ├── schemas/
+    │   └── schema.sql     # SQL DDL schemas (students, queries, guidelines)
+    ├── seeds/
+    │   ├── guidelines.json# University bylaws & guidelines seed
+    │   └── students.json  # Sample student profiles
+    └── README.md          # Database documentation
 ```
 
 ---
@@ -76,30 +79,32 @@ campsdesk-ai/
 
 - [Node.js](https://nodejs.org/) (v18 or newer recommended)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-- [Expo Go](https://expo.dev/client) app on your mobile device (iOS or Android) OR an Android/iOS Emulator
 
-### Installation
+---
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Naveen-K518/Campsdesk-AI.git
-   cd Campsdesk-AI
-   ```
+### 1. Running the Frontend (Mobile App)
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+```bash
+cd frontend
+npm install
+npx expo start
+```
 
-3. **Start the development server**:
-   ```bash
-   npx expo start
-   ```
+* **Android**: Press `a` in the terminal or run `npm run android`
+* **iOS**: Press `i` in the terminal or run `npm run ios`
+* **Web**: Press `w` in the terminal or run `npm run web`
 
-4. **Run on specific platforms**:
-   - **Android**: Press `a` in the terminal or run `npm run android`
-   - **iOS**: Press `i` in the terminal or run `npm run ios`
-   - **Web**: Press `w` in the terminal or run `npm run web`
+---
+
+### 2. Running the Backend API
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+* Backend server runs on `http://localhost:5000` with endpoints for AI query processing (`/api/ai/query`) and guidelines (`/api/guidelines`).
 
 ---
 

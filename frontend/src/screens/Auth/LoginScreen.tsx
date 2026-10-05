@@ -23,32 +23,50 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const { login, student } = useQueryContext();
   const [email, setEmail] = useState('aarav.sharma@campus.edu');
-  const [password, setPassword] = useState('••••••••••••');
+  const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (!email.trim()) {
       Alert.alert('Email Required', 'Please enter your institutional email ID.');
       return;
     }
+    if (!password) {
+      Alert.alert('Password Required', 'Please enter your password.');
+      return;
+    }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login();
-      navigation.replace('Main');
-    }, 600);
+    const result = await login(email.trim(), password);
+    setLoading(false);
+
+    if (result.success) {
+      if (email.trim().toLowerCase().includes('faculty')) {
+        navigation.replace('FacultyDashboard');
+      } else {
+        navigation.replace('Main');
+      }
+    } else {
+      Alert.alert('Sign In Failed', result.error || 'Invalid institutional credentials. Please try again.');
+    }
+  };
+
+  const setDemoCredentials = (role: 'student' | 'faculty') => {
+    if (role === 'student') {
+      setEmail('aarav.sharma@campus.edu');
+      setPassword('password123');
+    } else {
+      setEmail('faculty@campus.edu');
+      setPassword('faculty123');
+    }
   };
 
   const handleGoogleSignIn = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login();
-      navigation.replace('Main');
-    }, 500);
+    // Fill student demo for convenience
+    setDemoCredentials('student');
+    Alert.alert('Google SSO', 'Filled student institutional credentials. Click Sign In to continue.');
   };
 
   return (
@@ -206,6 +224,55 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           >
             <Ionicons name="logo-google" size={18} color="#EA4335" style={styles.googleIcon} />
             <Text style={styles.googleBtnText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Quick Demo Switcher */}
+          <View style={{ marginTop: 14, alignItems: 'center' }}>
+            <Text style={{ fontSize: 11, color: theme.colors.text.muted, fontWeight: '700', marginBottom: 6 }}>
+              QUICK TEST CREDENTIALS:
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => setDemoCredentials('student')}
+                style={{
+                  backgroundColor: '#EEF2FF',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: theme.radii.full,
+                  borderWidth: 1,
+                  borderColor: '#C7D2FE',
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: theme.colors.primary }}>
+                  👨‍🎓 Student Demo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setDemoCredentials('faculty')}
+                style={{
+                  backgroundColor: '#F0FDF4',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: theme.radii.full,
+                  borderWidth: 1,
+                  borderColor: '#BBF7D0',
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#059669' }}>
+                  👨‍🏫 Faculty Demo
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Don't have an account? Register */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register')}
+            style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16, paddingVertical: 4 }}
+            activeOpacity={0.75}
+          >
+            <Text style={{ fontSize: 13, color: theme.colors.text.body }}>New to CampusDesk? </Text>
+            <Text style={{ fontSize: 13, fontWeight: '800', color: theme.colors.primary }}>Create Account</Text>
           </TouchableOpacity>
         </View>
 

@@ -257,6 +257,29 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
+        {/* Faculty / HOD Adjudication Queue Button */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('FacultyDashboard')}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#F0FDF4',
+            borderWidth: 1,
+            borderColor: '#BBF7D0',
+            borderRadius: theme.radii.full,
+            paddingVertical: 12,
+            gap: 6,
+            marginBottom: 12,
+          }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="school-outline" size={18} color="#059669" />
+          <Text style={{ fontSize: 13.5, fontWeight: '700', color: '#059669' }}>
+            Faculty & HOD Adjudication Queue →
+          </Text>
+        </TouchableOpacity>
+
         {/* Sign Out Button */}
         <TouchableOpacity
           onPress={handleLogout}

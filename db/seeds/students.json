@@ -1,0 +1,32 @@
+[
+  {
+    "id": "std_10492",
+    "name": "Aarav Sharma",
+    "rollNo": "22BCS10492",
+    "program": "B.Tech Computer Science & Engineering",
+    "year": "3rd Year",
+    "batch": "2022 - 2026",
+    "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+    "mobile": "+91 98452 10984",
+    "email": "aarav.sharma@campus.edu",
+    "cgpa": 8.74,
+    "credits": 118,
+    "attendanceAggregate": 72.4,
+    "department": "Computer Science & Engineering"
+  },
+  {
+    "id": "std_1789919170112",
+    "name": "Kishorkumar",
+    "rollNo": "7376241cs249",
+    "program": "B.E · Computer Science & Engineering",
+    "year": "1st Year",
+    "batch": "2024 - 2028",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+    "mobile": "+91 98000 00000",
+    "email": "kishorkumarp.cs24@bitsathy.ac.in",
+    "cgpa": 8.5,
+    "credits": 24,
+    "attendanceAggregate": 91.0,
+    "department": "Computer Science & Engineering"
+  }
+]

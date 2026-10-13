@@ -27,6 +27,61 @@ import { useQueryContext } from '../../context/QueryContext';
 // Complete any pending browser sessions for OAuth
 WebBrowser.maybeCompleteAuthSession();
 
+interface GoogleAuthConnectorProps {
+  clientId: string;
+  androidClientId?: string;
+  iosClientId?: string;
+  onSuccess: (idToken: string) => void;
+  triggerRef: React.MutableRefObject<(() => Promise<void>) | null>;
+}
+
+const GoogleAuthConnector: React.FC<GoogleAuthConnectorProps> = ({
+  clientId,
+  androidClientId,
+  iosClientId,
+  onSuccess,
+  triggerRef,
+}) => {
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId,
+    webClientId: clientId,
+    androidClientId: androidClientId || undefined,
+    iosClientId: iosClientId || undefined,
+    prompt: AuthSession.Prompt.SelectAccount,
+    extraParams: {
+      prompt: 'select_account',
+    },
+  });
+
+  useEffect(() => {
+    triggerRef.current = async () => {
+      try {
+        const result = await promptAsync();
+        if (result?.type === 'success') {
+          const idToken = result.params?.id_token || (result as any).authentication?.idToken;
+          if (idToken) {
+            onSuccess(idToken);
+          }
+        }
+      } catch (err: any) {
+        console.warn('Google prompt error:', err);
+        Alert.alert('Google Sign-In Error', err?.message || 'Authentication was interrupted.');
+      }
+    };
+  }, [promptAsync, onSuccess, triggerRef]);
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
+      if (idToken) {
+        onSuccess(idToken);
+      }
+    }
+  }, [response, onSuccess]);
+
+  return null;
+};
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
@@ -54,51 +109,16 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     googleWebClientId && googleWebClientId.endsWith('.apps.googleusercontent.com')
   );
 
-  // Fallback placeholder ID to satisfy expo-auth-session invariant checks when unconfigured
-  const placeholderClientId = 'campusdesk-unconfigured.apps.googleusercontent.com';
+  const googleTriggerRef = React.useRef<(() => Promise<void>) | null>(null);
 
-  // Startup warning and dev environment parameter logging
+  // Startup warning
   useEffect(() => {
     if (!isGoogleConfigured) {
-      console.warn(
-        '[Google Auth] Google sign-in is not configured. Missing or invalid variable: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID. Expected value ending with ".apps.googleusercontent.com".'
+      console.log(
+        '[Google Auth] Google sign-in is not configured. Email & password authentication is active.'
       );
     }
-
-    if (__DEV__) {
-      try {
-        const redirectUri = AuthSession.makeRedirectUri({ scheme: 'campusdesk' });
-        console.log('[Google Auth Dev Debug] Frontend (Expo):');
-        console.log('  configured:', isGoogleConfigured ? 'YES' : 'NO');
-        console.log('  client_id:', googleWebClientId || '(EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not configured)');
-        console.log('  redirect_uri:', redirectUri);
-      } catch (e: any) {
-        console.warn('[Google Auth Dev Debug] Could not calculate redirect URI:', e?.message);
-      }
-    }
-  }, [isGoogleConfigured, googleWebClientId]);
-
-  // prompt: select_account guarantees the account chooser is presented every time
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: isGoogleConfigured ? googleWebClientId : placeholderClientId,
-    webClientId: isGoogleConfigured ? googleWebClientId : placeholderClientId,
-    androidClientId: googleAndroidClientId || (isGoogleConfigured ? undefined : placeholderClientId),
-    iosClientId: googleIosClientId || (isGoogleConfigured ? undefined : placeholderClientId),
-    prompt: AuthSession.Prompt.SelectAccount,
-    extraParams: {
-      prompt: 'select_account',
-    },
-  });
-
-  // Handle OAuth response
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const idToken = response.params?.id_token || (response as any).authentication?.idToken;
-      if (idToken) {
-        processGoogleToken(idToken);
-      }
-    }
-  }, [response]);
+  }, [isGoogleConfigured]);
 
   const processGoogleToken = async (idToken: string) => {
     setLoading(true);
@@ -145,30 +165,18 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
     if (!isGoogleConfigured) {
       Alert.alert(
         'Google sign-in is not configured',
-        'Google sign-in cannot open because EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is missing or not ending with ".apps.googleusercontent.com".\n\nPlease add a valid Google OAuth Client ID to frontend/.env.'
+        'Google sign-in is currently disabled because EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID is not configured.\n\nPlease sign in with your email and password below.'
       );
       return;
     }
 
-    if (!request) {
+    if (googleTriggerRef.current) {
+      await googleTriggerRef.current();
+    } else {
       Alert.alert(
-        'Google sign-in is not configured',
-        'The OAuth request could not be initialized. Please check your EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID configuration.'
+        'Google sign-in initializing',
+        'Please wait a moment and try again.'
       );
-      return;
-    }
-
-    try {
-      const result = await promptAsync();
-      if (result.type === 'success') {
-        const idToken = result.params?.id_token || (result as any).authentication?.idToken;
-        if (idToken) {
-          await processGoogleToken(idToken);
-        }
-      }
-    } catch (err: any) {
-      console.warn('Google prompt error:', err);
-      Alert.alert('Google Sign-In Error', err?.message || 'Authentication was interrupted.');
     }
   };
 
@@ -557,6 +565,15 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+      {isGoogleConfigured && (
+        <GoogleAuthConnector
+          clientId={googleWebClientId}
+          androidClientId={googleAndroidClientId}
+          iosClientId={googleIosClientId}
+          onSuccess={processGoogleToken}
+          triggerRef={googleTriggerRef}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 };

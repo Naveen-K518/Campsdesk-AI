@@ -17,6 +17,7 @@ import { useQueryContext } from '../../context/QueryContext';
 import { GlobalTopBar } from '../../components/common/GlobalTopBar';
 import { StatCard } from '../../components/common/StatCard';
 import { QueryCard } from '../../components/cards/QueryCard';
+import { NewQueryModal } from '../../components/common/NewQueryModal';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'HistoryTab'>,
@@ -29,6 +30,7 @@ export const HistoryScreen: React.FC<Props> = ({ navigation, route }) => {
   const { queries } = useQueryContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSegment, setActiveSegment] = useState<SegmentType>('all');
+  const [isNewQueryModalVisible, setIsNewQueryModalVisible] = useState(false);
 
   // Compute stat values
   const activeCount = queries.filter(
@@ -83,23 +85,34 @@ export const HistoryScreen: React.FC<Props> = ({ navigation, route }) => {
               </View>
             </View>
 
-            <TouchableOpacity
-              onPress={() => {
-                // Cycle segments quickly as filter
-                setActiveSegment(
-                  activeSegment === 'all'
-                    ? 'active'
-                    : activeSegment === 'active'
-                    ? 'resolved'
-                    : 'all'
-                );
-              }}
-              style={styles.filterBtn}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="funnel-outline" size={16} color={theme.colors.primary} />
-              <Text style={styles.filterText}>Filter</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActionsRow}>
+              <TouchableOpacity
+                onPress={() => setIsNewQueryModalVisible(true)}
+                style={styles.newQueryBtn}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="add" size={16} color="#FFFFFF" />
+                <Text style={styles.newQueryBtnText}>New Query</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  // Cycle segments quickly as filter
+                  setActiveSegment(
+                    activeSegment === 'all'
+                      ? 'active'
+                      : activeSegment === 'active'
+                      ? 'resolved'
+                      : 'all'
+                  );
+                }}
+                style={styles.filterBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="funnel-outline" size={16} color={theme.colors.primary} />
+                <Text style={styles.filterText}>Filter</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           <Text style={styles.subTitle}>
             Track your academic, hostel, and administrative requests
@@ -237,6 +250,15 @@ export const HistoryScreen: React.FC<Props> = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* New Query Creation Modal */}
+      <NewQueryModal
+        visible={isNewQueryModalVisible}
+        onClose={() => setIsNewQueryModalVisible(false)}
+        onSuccess={(created) => {
+          navigation.navigate('QueryDetail', { queryId: created.id });
+        }}
+      />
     </View>
   );
 };
@@ -284,6 +306,26 @@ const styles = StyleSheet.create({
   subTitle: {
     fontSize: 12.5,
     color: theme.colors.text.subtle,
+  },
+  headerActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  newQueryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: theme.radii.full,
+    ...theme.shadows.sm,
+  },
+  newQueryBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   filterBtn: {
     flexDirection: 'row',

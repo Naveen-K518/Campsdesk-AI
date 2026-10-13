@@ -13,11 +13,14 @@ export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
   Register: undefined;
+  MentorQueue: undefined;
   FacultyDashboard: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined;
   QueryDetail: { queryId: string };
   Notifications: undefined;
   GuidelineDetail: { guidelineId: string };
+  TimetableNotices: undefined;
   Settings: undefined;
   EditProfile: undefined;
 };
+

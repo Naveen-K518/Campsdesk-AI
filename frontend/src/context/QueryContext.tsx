@@ -3,14 +3,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Student, Query, Guideline, NotificationItem, AuditEntry, QueryStatus } from '../types';
 import { mockStudent, mockQueries, mockGuidelines, mockNotifications } from '../data/mockData';
 import * as api from '../services/api';
+import {
+  getSocket,
+  reconnectSocket,
+  disconnectSocket,
+} from '../services/socket';
 
 export interface AuthUserInfo {
   id: string;
   email: string;
-  role: 'student' | 'faculty' | 'admin';
+  role: 'student' | 'mentor' | 'faculty' | 'admin';
   name: string;
   studentId?: string | null;
 }
+
 
 interface QueryContextType {
   student: Student;
@@ -27,7 +33,8 @@ interface QueryContextType {
   addAuditEntry: (queryId: string, entry: Omit<AuditEntry, 'id' | 'timestamp'>) => Promise<void> | void;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
-  login: (email?: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: AuthUserInfo | null; error?: string }>;
+  loginWithGoogle: (idToken: string) => Promise<{ success: boolean; user?: AuthUserInfo | null; error?: string }>;
   registerUser: (data: {
     email: string;
     password: string;
@@ -39,6 +46,7 @@ interface QueryContextType {
   logout: () => void;
   updateStudent: (partial: Partial<Student>) => void;
   refreshQueries: () => Promise<void>;
+  refreshGuidelines: () => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -117,6 +125,86 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     initializeAppState();
   }, []);
 
+  // Real-time WebSocket synchronization for live docket updates
+  useEffect(() => {
+    if (!isLoggedIn) {
+      disconnectSocket();
+      return;
+    }
+
+    let isMounted = true;
+    let s: any = null;
+
+    const handleQueryCreated = (newDocket: Query) => {
+      setQueries((prev) => {
+        if (prev.some((q) => q.id === newDocket.id || q.code === newDocket.code)) {
+          return prev;
+        }
+        return [newDocket, ...prev];
+      });
+
+      const notice: NotificationItem = {
+        id: `n_${Date.now()}`,
+        title: 'New Docket Initiated',
+        description: `Case ${newDocket.code} (${newDocket.subject}) entered the queue.`,
+        timestamp: 'Just now',
+        read: false,
+        type: 'update',
+        linkQueryId: newDocket.id,
+      };
+      setNotifications((prev) => [notice, ...prev]);
+    };
+
+    const handleQueryUpdated = (updatedDocket: Query) => {
+      setQueries((prev) =>
+        prev.map((q) => (q.id === updatedDocket.id ? updatedDocket : q))
+      );
+
+      let noticeTitle = `Docket ${updatedDocket.code} Updated`;
+      let noticeDesc = `Status: ${updatedDocket.status.toUpperCase()}`;
+
+      if (updatedDocket.status === 'resolved') {
+        noticeTitle = `✓ Docket ${updatedDocket.code} Approved`;
+        noticeDesc = `Faculty granted approval / condonation.`;
+      } else if (updatedDocket.status === 'action_required') {
+        noticeTitle = `⚠️ Action Required: ${updatedDocket.code}`;
+        noticeDesc = `Faculty requested further physical documentation.`;
+      }
+
+      const notice: NotificationItem = {
+        id: `n_${Date.now()}`,
+        title: noticeTitle,
+        description: noticeDesc,
+        timestamp: 'Just now',
+        read: false,
+        type: 'alert',
+        linkQueryId: updatedDocket.id,
+      };
+      setNotifications((prev) => [notice, ...prev]);
+    };
+
+    const connectAndListen = async () => {
+      const token = await api.getAuthToken();
+      if (!isMounted || !token) return;
+
+      s = getSocket(token);
+      if (!s) return;
+
+      s.on('query:created', handleQueryCreated);
+      s.on('query:updated', handleQueryUpdated);
+    };
+
+    connectAndListen();
+
+    return () => {
+      isMounted = false;
+      if (s) {
+        s.off('query:created', handleQueryCreated);
+        s.off('query:updated', handleQueryUpdated);
+      }
+    };
+  }, [isLoggedIn, currentUser]);
+
   const refreshQueries = async () => {
     try {
       const live = await api.getQueries();
@@ -130,12 +218,15 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const login = async (
-    email = 'aarav.sharma@campus.edu',
-    password = 'password123'
-  ): Promise<{ success: boolean; error?: string }> => {
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; user?: AuthUserInfo | null; error?: string }> => {
     try {
       const res = await api.login(email, password);
       if (res.user) {
+        if (res.token) {
+          reconnectSocket(res.token);
+        }
         setCurrentUser(res.user);
         setIsLoggedIn(true);
         await AsyncStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(true));
@@ -148,12 +239,41 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         // Load user's queries
         await refreshQueries();
-        return { success: true };
+        return { success: true, user: res.user };
       }
       return { success: false, error: 'Authentication returned no user' };
     } catch (err: any) {
       console.warn('[QueryContext] Login failed:', err.message);
       return { success: false, error: err.message || 'Login failed' };
+    }
+  };
+
+  const loginWithGoogle = async (
+    idToken: string
+  ): Promise<{ success: boolean; user?: AuthUserInfo | null; error?: string }> => {
+    try {
+      const res = await api.loginWithGoogle(idToken);
+      if (res.user) {
+        if (res.token) {
+          reconnectSocket(res.token);
+        }
+        setCurrentUser(res.user);
+        setIsLoggedIn(true);
+        await AsyncStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(true));
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(res.user));
+
+        if (res.student) {
+          setStudent(res.student);
+          await AsyncStorage.setItem(STORAGE_KEYS.STUDENT, JSON.stringify(res.student));
+        }
+
+        await refreshQueries();
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: 'Authentication returned no user' };
+    } catch (err: any) {
+      console.warn('[QueryContext] Google Login failed:', err.message);
+      return { success: false, error: err.message || 'Google sign-in failed' };
     }
   };
 
@@ -168,6 +288,9 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     try {
       const res = await api.register(userData);
       if (res.user) {
+        if (res.token) {
+          reconnectSocket(res.token);
+        }
         setCurrentUser(res.user);
         setIsLoggedIn(true);
         if (res.student) {
@@ -185,6 +308,7 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const logout = async () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
+    disconnectSocket();
     await api.clearAuthToken();
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(false));
@@ -295,6 +419,17 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const refreshGuidelines = async () => {
+    try {
+      const liveGuidelines = await api.getGuidelines();
+      if (Array.isArray(liveGuidelines) && liveGuidelines.length > 0) {
+        setGuidelines(liveGuidelines);
+      }
+    } catch (err) {
+      console.warn('[QueryContext] Error refreshing guidelines:', err);
+    }
+  };
+
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   return (
@@ -315,10 +450,12 @@ export const QueryProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         markNotificationAsRead,
         markAllNotificationsAsRead,
         login,
+        loginWithGoogle,
         registerUser,
         logout,
         updateStudent,
         refreshQueries,
+        refreshGuidelines,
       }}
     >
       {children}

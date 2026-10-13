@@ -41,3 +41,10 @@ build/
 backend/data/
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Admin Portal
+admin-portal/dist/
+admin-portal/.env
+admin-portal/.env.local
+admin-portal/.env.*.local
+

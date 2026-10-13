@@ -54,20 +54,29 @@ Campsdesk-AI/
 │   ├── app.json           # Expo Configuration
 │   ├── package.json       # Frontend dependencies & scripts
 │   └── tsconfig.json      # Frontend TypeScript configuration
+├── admin-portal/          # Enterprise Administration Console (React + Vite + Tailwind + shadcn/ui)
+│   ├── src/
+│   │   ├── components/    # Layout, Sidebar, TopBar, shadcn/ui primitives
+│   │   ├── context/       # AuthContext (admin-only barrier) & ThemeContext
+│   │   ├── pages/         # Dashboard, Mentors, Students, Assignments, Queries, Documents, Settings
+│   │   └── lib/           # Typed REST API client & utils
+│   ├── package.json       # Admin portal dependencies
+│   ├── vite.config.ts     # Vite bundler configuration
+│   └── .env.example       # API endpoint template (VITE_API_URL)
 ├── backend/               # Server & AI Orchestration API
 │   ├── src/
-│   │   ├── routes/        # AI & Guidelines endpoints
-│   │   ├── services/      # Gemini / Mistral AI service integrations
+│   │   ├── routes/        # Auth, Queries, Mentors, AI & Guidelines endpoints
+│   │   ├── services/      # Gemini AI & Socket.io real-time updates
 │   │   └── server.ts      # Express application entry point
 │   ├── package.json       # Backend dependencies
 │   ├── tsconfig.json      # Backend TypeScript configuration
 │   └── .env.example       # API keys configuration template
 └── db/                    # Database Schemas & Seed Data
     ├── schemas/
-    │   └── schema.sql     # SQL DDL schemas (students, queries, guidelines)
+    │   └── schema.sql     # SQL DDL schemas (students, queries, mentor_assignments, guidelines)
     ├── seeds/
     │   ├── guidelines.json# University bylaws & guidelines seed
-    │   └── students.json  # Sample student profiles
+    │   └── students.json  # Sample student profiles (~12 students)
     └── README.md          # Database documentation
 ```
 
@@ -82,21 +91,7 @@ Campsdesk-AI/
 
 ---
 
-### 1. Running the Frontend (Mobile App)
-
-```bash
-cd frontend
-npm install
-npx expo start
-```
-
-* **Android**: Press `a` in the terminal or run `npm run android`
-* **iOS**: Press `i` in the terminal or run `npm run ios`
-* **Web**: Press `w` in the terminal or run `npm run web`
-
----
-
-### 2. Running the Backend API
+### 1. Running the Backend API
 
 ```bash
 cd backend
@@ -104,7 +99,35 @@ npm install
 npm run dev
 ```
 
-* Backend server runs on `http://localhost:5000` with endpoints for AI query processing (`/api/ai/query`) and guidelines (`/api/guidelines`).
+* Backend server runs on `http://localhost:5000` with SQLite database, Socket.io real-time feeds, and REST endpoints.
+
+---
+
+### 2. Running the Mobile Application (Student & Mentor Client)
+
+```bash
+cd frontend
+npm install
+npx expo start
+```
+
+* **Web**: Press `w` in terminal or open `http://localhost:8081`
+* **Android**: Press `a` in terminal or run `npm run android`
+* **iOS**: Press `i` in terminal or run `npm run ios`
+
+---
+
+### 3. Running the Admin Portal (Administrator Web Console)
+
+```bash
+cd admin-portal
+npm install
+npm run dev
+```
+
+* Launches at `http://localhost:5173`.
+* Restricted to **admin** accounts (demo credentials: `admin@campus.edu` / `admin123`). Mentor and student accounts are strictly rejected.
+
 
 ---
 

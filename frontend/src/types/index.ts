@@ -6,7 +6,8 @@ export type QueryStatus =
   | 'action_required' 
   | 'resolved' 
   | 'completed' 
-  | 'live_agent_sync';
+  | 'live_agent_sync'
+  | 'unassigned';
 
 export interface Student {
   id: string;
@@ -28,6 +29,13 @@ export interface Student {
     hours: string;
     email: string;
   };
+  mentor?: {
+    id?: string;
+    name: string;
+    office?: string;
+    hours?: string;
+    email: string;
+  };
 }
 
 export interface WorkflowStep {
@@ -44,7 +52,7 @@ export interface WorkflowStep {
 
 export interface AuditEntry {
   id: string;
-  sender: 'student' | 'agent' | 'faculty';
+  sender: 'student' | 'agent' | 'faculty' | 'mentor' | 'admin';
   authorName: string;
   roleBadge?: string;
   timestamp: string;
@@ -63,6 +71,10 @@ export interface AuditEntry {
 export interface Query {
   id: string;
   code: string; // e.g. #CS-4921
+  studentId?: string;
+  studentName?: string;
+  studentRollNo?: string;
+  studentDepartment?: string;
   category: string;
   subject: string;
   title: string;
@@ -73,6 +85,9 @@ export interface Query {
   createdAt: string;
   updatedAt: string;
   assignedTo?: string;
+  assignedMentorId?: string | null;
+  mentorName?: string;
+  mentorEmail?: string;
   aiConfidence?: number;
   resolutionTimeMins?: number;
   rating?: number;
@@ -81,6 +96,7 @@ export interface Query {
   auditTranscript?: AuditEntry[];
   daysCondonation?: number;
 }
+
 
 export interface ChatMessage {
   id: string;
@@ -123,3 +139,37 @@ export interface NotificationItem {
   type: 'alert' | 'approval' | 'update' | 'system';
   linkQueryId?: string;
 }
+
+export interface TimetableEntry {
+  id?: string;
+  resource_id?: string;
+  day: string;
+  period: number;
+  subject: string;
+  faculty?: string;
+  room?: string;
+  department?: string;
+  year?: string;
+  created_at?: string;
+}
+
+export type ResourceCategory = 'rules' | 'timetable' | 'calendar' | 'circular' | 'form' | 'other';
+export type ResourceStatus = 'draft' | 'published' | 'archived';
+
+export interface ResourceItem {
+  id: string;
+  title: string;
+  category: ResourceCategory;
+  department?: string;
+  academic_year?: string;
+  description?: string;
+  file_url?: string;
+  status: ResourceStatus;
+  version: number;
+  effective_date?: string;
+  uploaded_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  timetableEntries?: TimetableEntry[];
+}
+

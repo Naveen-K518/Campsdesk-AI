@@ -54,7 +54,7 @@ async function runTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'aarav.sharma@campus.edu',
+        email: 'kishorkumarp.cs24@bitsathy.ac.in',
         password: 'password123',
       }),
     });
@@ -84,7 +84,7 @@ async function runTests() {
       }),
     });
     const data = await res.json();
-    if (res.status === 200 && data.token && data.user.role === 'faculty') {
+    if (res.status === 200 && data.token && (data.user.role === 'faculty' || data.user.role === 'mentor')) {
       facultyToken = data.token;
       results['POST /api/auth/login (Faculty)'] = {
         status: 'PASS',

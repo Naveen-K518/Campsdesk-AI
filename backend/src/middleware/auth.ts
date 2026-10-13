@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 export interface AuthUser {
   id: string;
   email: string;
-  role: 'student' | 'faculty' | 'admin';
+  role: 'student' | 'mentor' | 'faculty' | 'admin';
   studentId?: string | null;
   name: string;
 }
@@ -17,7 +17,8 @@ declare global {
   }
 }
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'campusdesk_secret_jwt_2025';
+import { JWT_SECRET } from '../config/env';
+export { JWT_SECRET };
 
 export function authenticateToken(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization'];
@@ -36,14 +37,19 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   });
 }
 
-export function requireRole(allowedRoles: Array<'student' | 'faculty' | 'admin'>) {
+export function requireRole(allowedRoles: Array<'student' | 'mentor' | 'faculty' | 'admin'>) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-    if (!allowedRoles.includes(req.user.role)) {
+    const effectiveRoles = new Set(allowedRoles);
+    if (effectiveRoles.has('mentor')) effectiveRoles.add('faculty');
+    if (effectiveRoles.has('faculty')) effectiveRoles.add('mentor');
+
+    if (!effectiveRoles.has(req.user.role)) {
       return res.status(403).json({ error: `Forbidden: requires one of [${allowedRoles.join(', ')}] role` });
     }
     next();
   };
 }
+

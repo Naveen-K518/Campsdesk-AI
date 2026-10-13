@@ -49,13 +49,13 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
       ),
     ]).start();
 
-    // Auto-navigate after ~1.8s
+    // Always navigate to Login on app open so user can sign in or switch profiles
     const timer = setTimeout(() => {
-      navigation.replace(isLoggedIn ? 'Main' : 'Login');
-    }, 1900);
+      navigation.replace('Login');
+    }, 1800);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, glowAnim, navigation, isLoggedIn]);
+  }, [fadeAnim, scaleAnim, glowAnim, navigation]);
 
   return (
     <View style={styles.container}>

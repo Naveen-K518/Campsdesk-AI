@@ -19,6 +19,7 @@ import { StatCard } from '../../components/common/StatCard';
 import { QueryCard } from '../../components/cards/QueryCard';
 import { SectionHeader } from '../../components/common/SectionHeader';
 import { SuggestedPromptChips, PromptOption } from '../../components/chat/SuggestedPromptChips';
+import { NewQueryModal } from '../../components/common/NewQueryModal';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'HomeTab'>,
@@ -26,8 +27,9 @@ type Props = CompositeScreenProps<
 >;
 
 export const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { student, queries, setPrefilledPrompt } = useQueryContext();
+  const { student, queries, setPrefilledPrompt, logout } = useQueryContext();
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const [isNewQueryModalVisible, setIsNewQueryModalVisible] = useState(false);
 
   // Compute stat values dynamically
   const pendingCount = queries.filter(
@@ -48,7 +50,7 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleStartNewQuery = () => {
-    navigation.navigate('AskAITab', {});
+    setIsNewQueryModalVisible(true);
   };
 
   return (
@@ -58,6 +60,10 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
         onPressAvatar={() => navigation.navigate('ProfileTab')}
         onPressNotifications={() => navigation.navigate('Notifications')}
         onPressSearch={() => navigation.navigate('HistoryTab', {})}
+        onPressLogout={() => {
+          logout();
+          navigation.replace('Login');
+        }}
       />
 
       <ScrollView
@@ -101,6 +107,31 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={theme.colors.primary} />
+        </TouchableOpacity>
+
+        {/* Action Hub: Timetable & Notices Banner */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('TimetableNotices')}
+          activeOpacity={0.88}
+          style={styles.timetableBanner}
+        >
+          <View style={styles.timetableIconWrap}>
+            <Ionicons name="calendar" size={20} color="#FFFFFF" />
+          </View>
+          <View style={styles.timetableTextWrap}>
+            <View style={styles.timetableTagRow}>
+              <Text style={styles.timetableTagText}>SCHEDULES & NOTICES</Text>
+              <View style={styles.timetableLiveDot} />
+              <Text style={styles.timetableLiveText}>Updated</Text>
+            </View>
+            <Text style={styles.timetableTitle}>Class Timetable & Circulars</Text>
+            <Text style={styles.timetableSubtext} numberOfLines={1}>
+              View lectures, academic calendar, and department circulars
+            </Text>
+          </View>
+          <View style={styles.timetableArrowBtn}>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.primary} />
+          </View>
         </TouchableOpacity>
 
         {/* 3-Column Stat Row */}
@@ -230,6 +261,15 @@ export const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* New Query Creation Modal */}
+      <NewQueryModal
+        visible={isNewQueryModalVisible}
+        onClose={() => setIsNewQueryModalVisible(false)}
+        onSuccess={(created) => {
+          navigation.navigate('QueryDetail', { queryId: created.id });
+        }}
+      />
     </View>
   );
 };
@@ -333,6 +373,71 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: theme.colors.text.heading,
     lineHeight: 16,
+  },
+  timetableBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: theme.radii.lg,
+    padding: 12,
+    marginBottom: 14,
+    ...theme.shadows.sm,
+  },
+  timetableIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  timetableTextWrap: {
+    flex: 1,
+    marginRight: 8,
+  },
+  timetableTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  timetableTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: theme.colors.primary,
+    letterSpacing: 0.7,
+  },
+  timetableLiveDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#10B981',
+    marginHorizontal: 5,
+  },
+  timetableLiveText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  timetableTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: theme.colors.text.heading,
+  },
+  timetableSubtext: {
+    fontSize: 11,
+    color: theme.colors.text.subtle,
+    marginTop: 1,
+  },
+  timetableArrowBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsRow: {
     flexDirection: 'row',

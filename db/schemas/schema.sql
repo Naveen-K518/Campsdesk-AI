@@ -47,11 +47,20 @@ CREATE TABLE IF NOT EXISTS queries (
     ai_confidence INT,
     resolution_time_mins INT,
     rating INT,
+    assigned_mentor_id VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Workflow Steps Table
+-- 4. Mentor Assignments Table (1:1 student-to-mentor)
+CREATE TABLE IF NOT EXISTS mentor_assignments (
+    id VARCHAR(50) PRIMARY KEY,
+    mentor_id VARCHAR(50) NOT NULL,
+    student_id VARCHAR(50) UNIQUE NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Workflow Steps Table
 CREATE TABLE IF NOT EXISTS workflow_steps (
     id VARCHAR(50) PRIMARY KEY,
     query_id VARCHAR(50) REFERENCES queries(id) ON DELETE CASCADE,
@@ -64,11 +73,11 @@ CREATE TABLE IF NOT EXISTS workflow_steps (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Audit Entries / Audit Log Table
+-- 6. Audit Entries / Audit Log Table
 CREATE TABLE IF NOT EXISTS audit_entries (
     id VARCHAR(50) PRIMARY KEY,
     query_id VARCHAR(50) REFERENCES queries(id) ON DELETE CASCADE,
-    sender VARCHAR(30) NOT NULL, -- student, agent, faculty
+    sender VARCHAR(30) NOT NULL, -- student, agent, mentor, faculty, admin
     author_name VARCHAR(100) NOT NULL,
     role_badge VARCHAR(50),
     timestamp VARCHAR(50) NOT NULL,
@@ -78,3 +87,47 @@ CREATE TABLE IF NOT EXISTS audit_entries (
     token_ref VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 7. Admin Resources Table
+CREATE TABLE IF NOT EXISTS resources (
+    id VARCHAR(50) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(50) NOT NULL, -- rules, timetable, calendar, circular, form, other
+    department VARCHAR(100),
+    academic_year VARCHAR(50),
+    description TEXT,
+    file_url TEXT,
+    status VARCHAR(30) DEFAULT 'draft', -- draft, published, archived
+    version INT DEFAULT 1,
+    effective_date VARCHAR(50),
+    uploaded_by VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. Resource Versions Table
+CREATE TABLE IF NOT EXISTS resource_versions (
+    id VARCHAR(50) PRIMARY KEY,
+    resource_id VARCHAR(50) NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    version INT NOT NULL,
+    file_url TEXT NOT NULL,
+    uploaded_by VARCHAR(50) NOT NULL,
+    change_summary TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Timetable Entries Table
+CREATE TABLE IF NOT EXISTS timetable_entries (
+    id VARCHAR(50) PRIMARY KEY,
+    resource_id VARCHAR(50) NOT NULL REFERENCES resources(id) ON DELETE CASCADE,
+    day VARCHAR(20) NOT NULL,
+    period INT NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    faculty VARCHAR(100),
+    room VARCHAR(50),
+    department VARCHAR(100),
+    year VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -22,20 +24,53 @@ type Props = CompositeScreenProps<
   NativeStackScreenProps<RootStackParamList>
 >;
 
-const CATEGORIES = [
-  'All Guidelines',
-  'Attendance & Leave',
-  'Examination & Grading',
-  'Hostel & Mess',
-  'Placements & NOC',
-  'Fee & Financial Aid',
-];
-
 export const GuidelinesScreen: React.FC<Props> = ({ navigation }) => {
-  const { guidelines, setPrefilledPrompt } = useQueryContext();
+  const { guidelines, setPrefilledPrompt, refreshGuidelines } = useQueryContext();
   const [selectedCategory, setSelectedCategory] = useState('All Guidelines');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>('g_02');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch freshest guidelines from API on mount
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        await refreshGuidelines();
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshGuidelines();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshGuidelines]);
+
+  // Dynamically compute categories from API-published guidelines
+  const categories = useMemo(() => {
+    const base = [
+      'All Guidelines',
+      'Attendance & Leave',
+      'Examination & Grading',
+      'Hostel & Mess',
+      'Placements & NOC',
+      'Fee & Financial Aid',
+    ];
+    const liveCategories = guidelines.map((g) => g.category).filter(Boolean);
+    return Array.from(new Set([...base, ...liveCategories]));
+  }, [guidelines]);
 
   const featuredGuideline = guidelines.find((g) => g.mostConsulted) || guidelines[0];
 
@@ -77,16 +112,24 @@ export const GuidelinesScreen: React.FC<Props> = ({ navigation }) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
       >
         {/* Header Block */}
         <View style={styles.headerBlock}>
           <View style={styles.eyebrowBadge}>
-            <Ionicons name="book" size={12} color={theme.colors.primary} />
-            <Text style={styles.eyebrowText}>Official University Codex 2025-26</Text>
+            <Ionicons name="shield-checkmark" size={12} color={theme.colors.primary} />
+            <Text style={styles.eyebrowText}>Official University Codex • Live API Sync</Text>
           </View>
           <Text style={styles.title}>University Guidelines & Policies</Text>
           <Text style={styles.subtitle}>
-            Verified ordinances, attendance condonation rules, and examination statutes.
+            Verified ordinances, attendance condonation rules, and examination statutes directly from the administrative database.
           </Text>
         </View>
 
@@ -113,7 +156,7 @@ export const GuidelinesScreen: React.FC<Props> = ({ navigation }) => {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesScroll}
         >
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <TouchableOpacity
               key={cat}
               onPress={() => setSelectedCategory(cat)}
@@ -250,6 +293,18 @@ export const GuidelinesScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             );
           })}
+
+          {filteredGuidelines.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="document-text-outline" size={44} color={theme.colors.text.muted} />
+              <Text style={styles.emptyTitle}>No Guidelines Found</Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery
+                  ? `No rules match "${searchQuery}". Try searching for attendance, leave, or exams.`
+                  : `No published guidelines under "${selectedCategory}".`}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {/* Bottom Help Card */}
@@ -617,5 +672,30 @@ const styles = StyleSheet.create({
   },
   helpBtn: {
     width: '100%',
+  },
+  emptyContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: theme.radii.lg,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+    marginVertical: 12,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.text.heading,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: theme.colors.text.muted,
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 16,
   },
 });

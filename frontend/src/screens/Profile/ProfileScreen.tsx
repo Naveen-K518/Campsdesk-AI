@@ -24,7 +24,12 @@ type Props = CompositeScreenProps<
 >;
 
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
-  const { student, logout } = useQueryContext();
+  const { student, logout, currentUser } = useQueryContext();
+  const canAccessMentorQueue =
+    currentUser?.role === 'mentor' ||
+    currentUser?.role === 'faculty' ||
+    currentUser?.role === 'admin' ||
+    __DEV__;
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
@@ -212,18 +217,31 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Faculty Advisor Section */}
-        {student.facultyAdvisor ? (
+        {/* Designated Faculty Mentor Section */}
+        {student.mentor || student.facultyAdvisor ? (
           <View style={styles.advisorCard}>
             <View style={styles.advisorHeader}>
               <Ionicons name="school-outline" size={20} color={theme.colors.primary} />
-              <Text style={styles.advisorTitle}>Designated Faculty Advisor</Text>
+              <Text style={styles.advisorTitle}>Designated Faculty Mentor</Text>
             </View>
-            <Text style={styles.advisorName}>{student.facultyAdvisor.name}</Text>
-            <Text style={styles.advisorDetails}>
-              {student.facultyAdvisor.office} • {student.facultyAdvisor.hours}
+            <Text style={styles.advisorName}>
+              {student.mentor?.name || student.facultyAdvisor?.name}
             </Text>
-            <Text style={styles.advisorEmail}>{student.facultyAdvisor.email}</Text>
+            <Text style={styles.advisorDetails}>
+              {student.mentor?.office || student.facultyAdvisor?.office || 'Academic Block 3, Room 412'} •{' '}
+              {student.mentor?.hours || student.facultyAdvisor?.hours || 'Tue & Thu • 2:00 PM – 4:30 PM'}
+            </Text>
+            <TouchableOpacity
+              onPress={() => handleCopy(student.mentor?.email || student.facultyAdvisor?.email || '', 'Mentor Email')}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="mail-outline" size={14} color={theme.colors.primary} />
+              <Text style={styles.advisorEmail}>
+                {student.mentor?.email || student.facultyAdvisor?.email}
+              </Text>
+              <Ionicons name="copy-outline" size={12} color={theme.colors.text.muted} />
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -233,7 +251,7 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.settingRow}>
             <View style={styles.settingTextWrap}>
               <Text style={styles.settingLabel}>Autonomous Triage Push Alerts</Text>
-              <Text style={styles.settingSub}>Immediate notifications when HOD approves docket</Text>
+              <Text style={styles.settingSub}>Immediate notifications when Mentor approves docket</Text>
             </View>
             <Switch
               value={pushEnabled}
@@ -257,28 +275,31 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Faculty / HOD Adjudication Queue Button */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate('FacultyDashboard')}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#F0FDF4',
-            borderWidth: 1,
-            borderColor: '#BBF7D0',
-            borderRadius: theme.radii.full,
-            paddingVertical: 12,
-            gap: 6,
-            marginBottom: 12,
-          }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="school-outline" size={18} color="#059669" />
-          <Text style={{ fontSize: 13.5, fontWeight: '700', color: '#059669' }}>
-            Faculty & HOD Adjudication Queue →
-          </Text>
-        </TouchableOpacity>
+        {/* Mentor Queue Button (Mentor/Admin role or Dev mode) */}
+        {canAccessMentorQueue ? (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('MentorQueue')}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#F0FDF4',
+              borderWidth: 1,
+              borderColor: '#BBF7D0',
+              borderRadius: theme.radii.full,
+              paddingVertical: 12,
+              gap: 6,
+              marginBottom: 12,
+            }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="school-outline" size={18} color="#059669" />
+            <Text style={{ fontSize: 13.5, fontWeight: '700', color: '#059669' }}>
+              Mentor Queue →
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
 
         {/* Sign Out Button */}
         <TouchableOpacity

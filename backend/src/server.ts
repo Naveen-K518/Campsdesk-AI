@@ -5,14 +5,20 @@ import path from 'path';
 import { initDb } from './db';
 import { authRouter } from './routes/authRoutes';
 import { queryRouter } from './routes/queryRoutes';
-import { guidelinesRouter } from './routes/guidelinesRoutes';
+import { guidelinesRouter, adminGuidelinesRouter } from './routes/guidelinesRoutes';
 import { aiRouter } from './routes/aiRoutes';
 import { uploadRouter } from './routes/uploadRoutes';
+import { mentorRouter } from './routes/mentorRoutes';
+import { adminRouter } from './routes/adminRoutes';
+import { resourceRouter, adminResourceRouter } from './routes/resourceRoutes';
 
-dotenv.config();
+import http from 'http';
+import { PORT, validateEnvironment } from './config/env';
+import { initSocketService } from './services/socketService';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
+initSocketService(server);
 
 // CORS configuration: Allow all origins in development, support credentials and Authorization header
 app.use(
@@ -26,9 +32,25 @@ app.use(
 
 app.use(express.json());
 
-// Serve uploaded documents statically
+// Serve uploaded documents securely with restrictive security headers
 const uploadsDir = path.resolve(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsDir));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox;");
+    next();
+  },
+  express.static(uploadsDir, {
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      // Enforce Content-Disposition: attachment for non-image files (e.g. PDFs)
+      if (ext !== '.png' && ext !== '.jpg' && ext !== '.jpeg') {
+        res.setHeader('Content-Disposition', 'attachment');
+      }
+    },
+  })
+);
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -36,6 +58,11 @@ app.use('/api/queries', queryRouter);
 app.use('/api/guidelines', guidelinesRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/mentors', mentorRouter);
+app.use('/api/admin/resources', adminResourceRouter);
+app.use('/api/admin/guidelines', adminGuidelinesRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/resources', resourceRouter);
 
 // Root landing page
 app.get('/', (req, res) => {
@@ -92,9 +119,10 @@ app.get('/health', (req, res) => {
 // Initialize database and start server
 async function startServer() {
   try {
+    validateEnvironment();
     await initDb();
-    app.listen(PORT, () => {
-      console.log(`[CampusDesk] Backend server running on port ${PORT}`);
+    server.listen(PORT, () => {
+      console.log(`[CampusDesk] Backend server & WebSocket running on port ${PORT}`);
     });
   } catch (err) {
     console.error('[CampusDesk] Failed to start server:', err);

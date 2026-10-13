@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { Query, Guideline, Student } from '../types';
+import { Query, Guideline, Student, ResourceItem } from '../types';
 
 const getBaseUrl = (): string => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -12,7 +12,7 @@ const getBaseUrl = (): string => {
   return envUrl || 'http://localhost:5000';
 };
 
-const BASE_URL = getBaseUrl();
+export const BASE_URL = getBaseUrl();
 const TOKEN_KEY = '@campusdesk_jwt_token_v1';
 
 let cachedToken: string | null = null;
@@ -103,6 +103,22 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+export async function loginWithGoogle(idToken: string) {
+  const data = await request<{
+    token: string;
+    user: any;
+    student: Student | null;
+  }>('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  });
+
+  if (data.token) {
+    await setAuthToken(data.token);
+  }
+  return data;
+}
+
 export async function register(userData: {
   email: string;
   password: string;
@@ -166,11 +182,23 @@ export async function getQueryById(id: string): Promise<Query> {
 export async function updateQueryStatus(
   id: string,
   status: string,
-  facultyRemark?: string
+  facultyRemark?: string,
+  priority?: string
 ): Promise<Query> {
   return request<Query>(`/api/queries/${id}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ status, facultyRemark }),
+    body: JSON.stringify({ status, facultyRemark, priority }),
+  });
+}
+
+export async function updateQueryPriority(
+  id: string,
+  priority: 'normal' | 'high' | 'urgent',
+  reason?: string
+): Promise<Query> {
+  return request<Query>(`/api/queries/${id}/priority`, {
+    method: 'PATCH',
+    body: JSON.stringify({ priority, reason }),
   });
 }
 
@@ -237,3 +265,28 @@ export async function uploadDocument(file: {
 
   return response.json();
 }
+
+// 6. Resources & Notices APIs
+export async function getResources(params?: {
+  category?: string;
+  department?: string;
+  academic_year?: string;
+}): Promise<ResourceItem[]> {
+  const queryParams = new URLSearchParams();
+  if (params?.category) queryParams.append('category', params.category);
+  if (params?.department) queryParams.append('department', params.department);
+  if (params?.academic_year) queryParams.append('academic_year', params.academic_year);
+
+  const queryString = queryParams.toString();
+  const endpoint = `/api/resources${queryString ? `?${queryString}` : ''}`;
+  return request<ResourceItem[]>(endpoint);
+}
+
+export function getFileUrl(pathOrUrl?: string): string {
+  if (!pathOrUrl) return '';
+  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+    return pathOrUrl;
+  }
+  return `${BASE_URL}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`;
+}
+

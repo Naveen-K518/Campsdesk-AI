@@ -9,6 +9,7 @@ interface GlobalTopBarProps {
   onPressAvatar?: () => void;
   onPressNotifications?: () => void;
   onPressSearch?: () => void;
+  onPressLogout?: () => void;
   termBadge?: string;
 }
 
@@ -16,6 +17,7 @@ export const GlobalTopBar: React.FC<GlobalTopBarProps> = ({
   onPressAvatar,
   onPressNotifications,
   onPressSearch,
+  onPressLogout,
   termBadge = 'Fall 2025',
 }) => {
   const insets = useSafeAreaInsets();
@@ -80,6 +82,16 @@ export const GlobalTopBar: React.FC<GlobalTopBarProps> = ({
             />
             <View style={styles.avatarOnlineDot} />
           </TouchableOpacity>
+
+          {onPressLogout ? (
+            <TouchableOpacity
+              onPress={onPressLogout}
+              style={[styles.iconButton, { marginLeft: 2 }]}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="log-out-outline" size={19} color="#DC2626" />
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </View>

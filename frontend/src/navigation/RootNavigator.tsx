@@ -8,6 +8,7 @@ import { BottomTabNavigator } from './BottomTabNavigator';
 import { QueryDetailScreen } from '../screens/Detail/QueryDetailScreen';
 import { NotificationsModal } from '../screens/Home/NotificationsModal';
 import { FacultyDashboardScreen } from '../screens/Faculty/FacultyDashboardScreen';
+import { TimetableNoticesScreen } from '../screens/Timetable/TimetableNoticesScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,6 +46,20 @@ export const RootNavigator: React.FC = () => {
         component={FacultyDashboardScreen}
         options={{ animation: 'slide_from_right' }}
       />
+      <Stack.Screen
+        name="MentorQueue"
+        component={FacultyDashboardScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+
+      <Stack.Screen
+        name="TimetableNotices"
+        component={TimetableNoticesScreen}
+        options={{
+          animation: 'slide_from_right',
+        }}
+      />
+
       <Stack.Screen
         name="QueryDetail"
         component={QueryDetailScreen}

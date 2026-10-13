@@ -14,7 +14,7 @@ aiRouter.post('/query', async (req: Request, res: Response) => {
     const aiResponse = await generateCollegeAIResponse(prompt, guidelinesContext);
     return res.json({ response: aiResponse });
   } catch (error: any) {
-    console.error('Error handling AI query:', error);
-    return res.status(500).json({ error: error.message || 'Internal server error' });
+    console.error('Error handling AI query:', error?.message);
+    return res.status(500).json({ error: 'Unable to process AI query at this time. Please consult your faculty advisor.' });
   }
 });

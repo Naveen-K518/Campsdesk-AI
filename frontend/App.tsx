@@ -13,6 +13,46 @@ import {
 import { QueryProvider } from './src/context/QueryContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: any) {
+    console.error('App-level render error:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, backgroundColor: '#0B0F1A', padding: 24, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: '#EF4444', fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+            Something went wrong
+          </Text>
+          <Text style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', marginBottom: 20 }}>
+            {this.state.error?.message || 'Unknown render error'}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -27,14 +67,16 @@ export default function App() {
   }
 
   const appContent = (
-    <SafeAreaProvider>
-      <QueryProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <RootNavigator />
-        </NavigationContainer>
-      </QueryProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <QueryProvider>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            <RootNavigator />
+          </NavigationContainer>
+        </QueryProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 
   // If running in desktop web browser, wrap in responsive mobile container
@@ -58,10 +100,11 @@ const styles = StyleSheet.create({
   },
   webOuterBackground: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#0F172A',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '100%',
   },
   webMobileContainer: {
     width: '100%',

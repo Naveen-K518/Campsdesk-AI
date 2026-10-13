@@ -23,7 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'QueryDetail'>;
 export const QueryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
   const { queryId } = route.params;
-  const { queries, addAuditEntry, updateQueryStatus } = useQueryContext();
+  const { queries, addAuditEntry, updateQueryStatus, student } = useQueryContext();
 
   const [replyText, setReplyText] = useState('');
 
@@ -56,8 +56,8 @@ export const QueryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
     if (action === 'Acknowledge & Thank') {
       addAuditEntry(query.id, {
         sender: 'student',
-        authorName: 'Aarav Sharma (Student)',
-        text: 'Thank you respected HOD for the prompt approval. I will collect the physical hall ticket today.',
+        authorName: `${student?.name || 'Student'}`,
+        text: 'Thank you respected Mentor for the prompt approval. I will collect the physical hall ticket today.',
       });
       updateQueryStatus(query.id, 'resolved');
       Alert.alert('Acknowledged', 'Thank-you note dispatched and case updated to Resolved.');
@@ -132,6 +132,51 @@ export const QueryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Designated Faculty Mentor Card on Docket */}
+        <View style={styles.mentorDocketCard}>
+          <View style={styles.mentorDocketTop}>
+            <View style={styles.mentorIconBox}>
+              <Ionicons name="school" size={17} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.mentorDocketLabel}>ASSIGNED FACULTY MENTOR</Text>
+              <Text style={styles.mentorDocketName}>
+                {query.mentorName || query.assignedTo || student?.mentor?.name || student?.facultyAdvisor?.name || 'Dr. K. Radhakrishnan'}
+              </Text>
+            </View>
+            <View style={styles.mentorBadgePill}>
+              <Text style={styles.mentorBadgeText}>Assigned Mentor</Text>
+            </View>
+          </View>
+          <View style={styles.mentorDocketBottom}>
+            <TouchableOpacity
+              onPress={() => {
+                const email =
+                  query.mentorEmail ||
+                  student?.mentor?.email ||
+                  student?.facultyAdvisor?.email ||
+                  'faculty@campus.edu';
+                Alert.alert('Mentor Contact', `Institutional Email: ${email}`);
+              }}
+              style={styles.mentorContactBtn}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="mail-outline" size={13} color={theme.colors.primary} />
+              <Text style={styles.mentorContactText}>
+                {query.mentorEmail ||
+                  student?.mentor?.email ||
+                  student?.facultyAdvisor?.email ||
+                  'faculty@campus.edu'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.mentorOfficeText}>
+              {student?.mentor?.office ||
+                student?.facultyAdvisor?.office ||
+                'Academic Block 3, Room 412'}
+            </Text>
+          </View>
+        </View>
+
         {/* Escalation Pipeline Stepper */}
         <EscalationTimeline />
 
@@ -292,7 +337,7 @@ export const QueryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           <TextInput
             value={replyText}
             onChangeText={setReplyText}
-            placeholder={`Reply to ${query.assignedTo || 'Faculty'} / AI…`}
+            placeholder={`Reply to ${query.mentorName || query.assignedTo || 'Mentor'} / AI…`}
             placeholderTextColor={theme.colors.text.muted}
             style={styles.replyInputField}
           />
@@ -683,4 +728,76 @@ const styles = StyleSheet.create({
   replySendActive: {
     backgroundColor: theme.colors.primary,
   },
+  mentorDocketCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: theme.radii.lg,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+    ...theme.shadows.sm,
+  },
+  mentorDocketTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  mentorIconBox: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mentorDocketLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.primary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  mentorDocketName: {
+    fontSize: 14.5,
+    fontWeight: '800',
+    color: theme.colors.text.heading,
+    marginTop: 1,
+  },
+  mentorBadgePill: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: theme.radii.full,
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+  },
+  mentorBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  mentorDocketBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 8,
+  },
+  mentorContactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  mentorContactText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: theme.colors.primary,
+  },
+  mentorOfficeText: {
+    fontSize: 11,
+    color: theme.colors.text.muted,
+  },
 });
+

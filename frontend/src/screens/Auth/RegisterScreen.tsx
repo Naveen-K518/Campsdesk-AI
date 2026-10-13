@@ -226,6 +226,21 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.signInText}>Already have an account? </Text>
             <Text style={styles.signInLink}>Sign In</Text>
           </TouchableOpacity>
+
+          {/* Google Notice Callout */}
+          <View style={{
+            marginTop: 16,
+            padding: 12,
+            backgroundColor: '#F1F5F9',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#E2E8F0',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontSize: 11.5, color: '#475569', textAlign: 'center', lineHeight: 16 }}>
+              Have an institutional Google account? You do not need to manually register. Sign in directly with <Text style={{ fontWeight: '700', color: theme.colors.primary }}>Continue with Google</Text> on the sign in page.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

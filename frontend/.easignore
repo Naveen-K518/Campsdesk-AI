@@ -1,0 +1,3 @@
+# Ignore native android/ios folders so EAS Build uses Managed Workflow (Expo Prebuild)
+android/
+ios/

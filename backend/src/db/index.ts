@@ -426,78 +426,75 @@ async function seedInitialData(): Promise<void> {
         );
       }
 
-      // Create or update matching student user in development mode
-      if (NODE_ENV !== 'production') {
-        const userExists = queryOne<any>('SELECT id FROM users WHERE lower(email) = ?', [s.email.toLowerCase()]);
-        const passwordHash = bcrypt.hashSync('password123', 10);
-        if (!userExists) {
-          db.run(
-            `INSERT INTO users (id, email, password_hash, role, name, student_id)
-             VALUES (?, ?, ?, 'student', ?, ?)`,
-            [`u_${effectiveStudentId}`, s.email, passwordHash, s.name, effectiveStudentId]
-          );
-        } else {
-          db.run(
-            `UPDATE users SET name = ?, student_id = ?, password_hash = ? WHERE id = ?`,
-            [s.name, effectiveStudentId, passwordHash, userExists.id]
-          );
-        }
+      // Create or update matching student user
+      const userExists = queryOne<any>('SELECT id FROM users WHERE lower(email) = ?', [s.email.toLowerCase()]);
+      const studentPasswordHash = bcrypt.hashSync('password123', 10);
+      if (!userExists) {
+        db.run(
+          `INSERT INTO users (id, email, password_hash, role, name, student_id)
+           VALUES (?, ?, ?, 'student', ?, ?)`,
+          [`u_${effectiveStudentId}`, s.email, studentPasswordHash, s.name, effectiveStudentId]
+        );
+      } else {
+        db.run(
+          `UPDATE users SET name = ?, student_id = ?, password_hash = ? WHERE id = ?`,
+          [s.name, effectiveStudentId, studentPasswordHash, userExists.id]
+        );
       }
 
     }
   }
 
-  // 3. Seed Mentors (3 mentors) & Admin (1 admin) (Development Mode)
-  if (NODE_ENV !== 'production') {
-    // Mentor 1 (Dr. K. Radhakrishnan - mentor.radhakrishnan@campus.edu / faculty@campus.edu)
-    const mentor1 = queryOne('SELECT * FROM users WHERE email = ? OR id = ? OR id = ?', ['faculty@campus.edu', 'u_mentor_1', 'u_faculty_01']);
-    if (!mentor1) {
-      const passwordHash = bcrypt.hashSync('mentor123', 10);
-      db.run(
-        `INSERT INTO users (id, email, password_hash, role, name, student_id)
-         VALUES (?, ?, ?, 'mentor', ?, ?)`,
-        ['u_faculty_01', 'faculty@campus.edu', passwordHash, 'Dr. K. Radhakrishnan', null]
-      );
-    } else {
-      db.run("UPDATE users SET role = 'mentor', name = 'Dr. K. Radhakrishnan' WHERE id = ?", [mentor1.id]);
-    }
+  // 3. Seed Mentors (3 mentors) & Admin (1 admin)
+  // Mentor 1 (Dr. K. Radhakrishnan - mentor.radhakrishnan@campus.edu / faculty@campus.edu)
+  const mentor1 = queryOne('SELECT * FROM users WHERE email = ? OR id = ? OR id = ?', ['faculty@campus.edu', 'u_mentor_1', 'u_faculty_01']);
+  if (!mentor1) {
+    const passwordHash = bcrypt.hashSync('mentor123', 10);
+    db.run(
+      `INSERT INTO users (id, email, password_hash, role, name, student_id)
+       VALUES (?, ?, ?, 'mentor', ?, ?)`,
+      ['u_faculty_01', 'faculty@campus.edu', passwordHash, 'Dr. K. Radhakrishnan', null]
+    );
+  } else {
+    db.run("UPDATE users SET role = 'mentor', name = 'Dr. K. Radhakrishnan' WHERE id = ?", [mentor1.id]);
+  }
 
-    // Mentor 2 (Dr. Priya Sharma - mentor.priya@campus.edu / password: mentor123)
-    const mentor2 = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['mentor.priya@campus.edu', 'u_mentor_2']);
-    if (!mentor2) {
-      const passwordHash = bcrypt.hashSync('mentor123', 10);
-      db.run(
-        `INSERT INTO users (id, email, password_hash, role, name, student_id)
-         VALUES (?, ?, ?, 'mentor', ?, ?)`,
-        ['u_mentor_2', 'mentor.priya@campus.edu', passwordHash, 'Dr. Priya Sharma', null]
-      );
-    } else {
-      db.run("UPDATE users SET role = 'mentor' WHERE id = ?", [mentor2.id]);
-    }
+  // Mentor 2 (Dr. Priya Sharma - mentor.priya@campus.edu / password: mentor123)
+  const mentor2 = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['mentor.priya@campus.edu', 'u_mentor_2']);
+  if (!mentor2) {
+    const passwordHash = bcrypt.hashSync('mentor123', 10);
+    db.run(
+      `INSERT INTO users (id, email, password_hash, role, name, student_id)
+       VALUES (?, ?, ?, 'mentor', ?, ?)`,
+      ['u_mentor_2', 'mentor.priya@campus.edu', passwordHash, 'Dr. Priya Sharma', null]
+    );
+  } else {
+    db.run("UPDATE users SET role = 'mentor' WHERE id = ?", [mentor2.id]);
+  }
 
-    // Mentor 3 (Dr. Anand Kumar - mentor.anand@campus.edu / password: mentor123)
-    const mentor3 = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['mentor.anand@campus.edu', 'u_mentor_3']);
-    if (!mentor3) {
-      const passwordHash = bcrypt.hashSync('mentor123', 10);
-      db.run(
-        `INSERT INTO users (id, email, password_hash, role, name, student_id)
-         VALUES (?, ?, ?, 'mentor', ?, ?)`,
-        ['u_mentor_3', 'mentor.anand@campus.edu', passwordHash, 'Dr. Anand Kumar', null]
-      );
-    } else {
-      db.run("UPDATE users SET role = 'mentor' WHERE id = ?", [mentor3.id]);
-    }
+  // Mentor 3 (Dr. Anand Kumar - mentor.anand@campus.edu / password: mentor123)
+  const mentor3 = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['mentor.anand@campus.edu', 'u_mentor_3']);
+  if (!mentor3) {
+    const passwordHash = bcrypt.hashSync('mentor123', 10);
+    db.run(
+      `INSERT INTO users (id, email, password_hash, role, name, student_id)
+       VALUES (?, ?, ?, 'mentor', ?, ?)`,
+      ['u_mentor_3', 'mentor.anand@campus.edu', passwordHash, 'Dr. Anand Kumar', null]
+    );
+  } else {
+    db.run("UPDATE users SET role = 'mentor' WHERE id = ?", [mentor3.id]);
+  }
 
-    // Admin (admin@campus.edu / password: admin123)
-    const adminUser = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['admin@campus.edu', 'u_admin_1']);
-    if (!adminUser) {
-      const passwordHash = bcrypt.hashSync('admin123', 10);
-      db.run(
-        `INSERT INTO users (id, email, password_hash, role, name, student_id)
-         VALUES (?, ?, ?, 'admin', ?, ?)`,
-        ['u_admin_1', 'admin@campus.edu', passwordHash, 'System Administrator', null]
-      );
-    }
+  // Admin (admin@campus.edu / password: admin123)
+  const adminUser = queryOne('SELECT * FROM users WHERE email = ? OR id = ?', ['admin@campus.edu', 'u_admin_1']);
+  if (!adminUser) {
+    const passwordHash = bcrypt.hashSync('admin123', 10);
+    db.run(
+      `INSERT INTO users (id, email, password_hash, role, name, student_id)
+       VALUES (?, ?, ?, 'admin', ?, ?)`,
+      ['u_admin_1', 'admin@campus.edu', passwordHash, 'System Administrator', null]
+    );
+    console.log('[Database] Seeded initial admin account: admin@campus.edu');
   }
 
   // 4. Seed Mentor Assignments (1:1 student-to-mentor)
